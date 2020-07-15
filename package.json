@@ -1,0 +1,14 @@
+{
+  "name": "vue-design",
+  "version": "1.0.0",
+  "description": "study vue source code",
+  "main": "index.js",
+  "scripts": {
+  },
+  "keywords": [
+    "vue",
+    "source code"
+  ],
+  "author": "Dolly Zhang",
+  "license": "MIT"
+}
