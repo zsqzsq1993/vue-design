@@ -25,6 +25,9 @@ import render from './render.js'
             'width': '50px',
             'height': '50px',
             'background': 'red'
+        },
+        onclick() {
+            alert('hello world')
         }
     }))
 

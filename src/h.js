@@ -92,7 +92,7 @@ function normalizeVNodes(children) {
     return retArray
 }
 
-function createTextNode(text) {
+export function createTextNode(text) {
     return {
         _isVNode: true,
         tag: null,
