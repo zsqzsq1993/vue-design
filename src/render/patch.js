@@ -1,6 +1,7 @@
 /* functions related to patch */
 import {VNodeFlags} from "../utils/flags.js"
 import mount from "./mount.js"
+import {ChildrenFlags} from "../utils/flags"
 
 export default function patch(prevVNode, vnode, container) {
     const preFlags = prevVNode.flags
@@ -57,7 +58,100 @@ function patchElement(prevVNode, vnode, container) {
             }
         }
     }
+
+    // patch children
+    patchChildren(
+        prevVNode.childFlags,
+        prevVNode.children,
+        vnode.childFlags,
+        vnode.children,
+        el
+    )
 }
+
+function patchChildren(
+    prevChildFlags,
+    prevChildren,
+    nextChildFlags,
+    nextChildren,
+    container
+) {
+    // prev choice * next choice
+    switch (prevChildFlags) {
+        case ChildrenFlags.NO_CHILDREN:
+            switch (nextChildFlags) {
+                // none - none: do nothing
+                case ChildrenFlags.NO_CHILDREN:
+                    break
+
+                // none-single: mount new
+                case ChildrenFlags.SINGLE_VNODE:
+                    mount(nextChildren, container)
+                    break
+
+                // none-multiple: periodically mount new
+                default:
+                    for (let key in nextChildren) {
+                        mount(nextChildren[key], container)
+                    }
+                    break
+            }
+            break
+
+        case ChildrenFlags.SINGLE_VNODE:
+            switch (nextChildFlags) {
+                // single - none: remove old
+                case ChildrenFlags.NO_CHILDREN:
+                    container.removeChild(prevChildren.el)
+                    break
+
+                // single - single: remove old and add new
+                case ChildrenFlags.SINGLE_VNODE:
+                    patch(prevChildren, nextChildren, container)
+                    break
+
+                // single - multiple: remove old and periodically mount new
+                default:
+                    container.removeChild(prevChildren.el)
+                    for (let key in nextChildren) {
+                        mount(nextChildren[key], container)
+                    }
+                    break
+            }
+            break
+
+        default:
+            switch (nextChildFlags) {
+                // multiple - none: periodically remove old
+                case ChildrenFlags.NO_CHILDREN:
+                    for (let key in prevChildren) {
+                        container.removeChild(prevChildren[key])
+                    }
+                    break
+
+                // multiple - single: periodically remove old and add new
+                case ChildrenFlags.SINGLE_VNODE:
+                    for (let key in prevChildren) {
+                        container.removeChild(prevChildren[key])
+                    }
+                    mount(nextChildren, container)
+                    break
+
+                // multiple - multiple: core! diff algorithm!
+                // can be simplified by periodically remove and periodically add
+                default:
+                    for (let key in prevChildren) {
+                        container.removeChild(prevChildren[key])
+                    }
+                    for (let key in nextChildren) {
+                        mount(nextChildren[key], container)
+                    }
+                    break
+            }
+            break
+    }
+}
+
 
 export function patchData(el, key, prevVal, nextVal, isSVG) {
     const domProp = /^[A-Z]|^(?:value|checked|selected|muted)$/
