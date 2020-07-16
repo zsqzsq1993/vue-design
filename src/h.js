@@ -11,7 +11,7 @@ export default function (tag, data = null, children = null) {
         flags = tag === 'svg'
             ? VNodeFlags.ELEMENT_SVG
             : VNodeFlags.ELEMENT_HTML
-        if (data) {
+        if (data && data.class) {
             data.class = normalizeClass(data.class)
         }
     } else if (tag === Fragment) {
@@ -36,6 +36,7 @@ export default function (tag, data = null, children = null) {
             childFlags = ChildrenFlags.NO_CHILDREN
         } else if (children.length === 1) {
             childFlags = ChildrenFlags.SINGLE_VNODE
+            children = children[0]
         } else {
             childFlags = ChildrenFlags.KEYED_VNODES
             children = normalizeVNodes(children)
