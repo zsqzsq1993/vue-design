@@ -175,7 +175,7 @@ function patchElement(prevVNode, vnode, container) {
 
     // patch vnodeData
     const nextData = vnode.data
-    const prevData = vnode.data
+    const prevData = prevVNode.data
 
     if (nextData) {
         for(let key in nextData) {

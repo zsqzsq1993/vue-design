@@ -1,5 +1,4 @@
-import h, {Fragment, Portal} from '../src/h.js'
-import render from '../src/render.js'
+import {h, render, Fragment, Portal} from "../src"
 
 (function () {
     const app = document.getElementById('test1');
