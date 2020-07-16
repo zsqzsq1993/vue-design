@@ -1,6 +1,7 @@
 import {VNodeFlags, ChildrenFlags} from "./flags.js"
 import {createTextNode} from "./h.js"
 
+/* render function */
 export default function (vnode, container) {
     const prevVNode = container.vnode
     if (prevVNode) {
@@ -19,6 +20,7 @@ export default function (vnode, container) {
     }
 }
 
+/* functions related to mount */
 function mount(vnonde, container, isSVG) {
     const {flags} = vnonde
     if (!flags) {
@@ -51,30 +53,7 @@ function mountElement(vnode, container, isSVG) {
     if (vnode.data) {
         const data = vnode.data
         for (const name in data) {
-            switch (name) {
-                case 'style':
-                    for (let key in data.style) {
-                        el.style[key] = data.style[key]
-                    }
-                    break
-                case 'class':
-                    if (isSVG) {
-                        el.setAttribute('class', data.class)
-                    } else {
-                        el.className = data.class
-                    }
-                    break
-                default:
-                    if (name[0] === 'o' && name[1] === 'n') {
-                        el.addEventListener(name.slice(2), data[name])
-                    }
-                    if (domProp.test(name)) {
-                        el[name] = data[name]
-                    } else {
-                        el.setAttribute(name, data[name])
-                    }
-                    break
-            }
+            patchData(el, name, null, data[name], isSVG)
         }
     }
 
@@ -159,3 +138,99 @@ function mountPortal(vnonde, container, isSVG) {
     vnonde.el = placeholder.el
 }
 
+/* functions related to patch */
+function patch(prevVNode, vnode, container) {
+    const preFlags = prevVNode.flags
+    const nextFlags = vnode.flags
+
+    if (preFlags !== nextFlags) {
+        replaceVNode(prevVNode, vnode, container)
+    } else if (nextFlags & VNodeFlags.ELEMENT) {
+        patchElement(prevVNode, vnode, container)
+    } else if (nextFlags & VNodeFlags.TEXT) {
+        patchText(prevVNode, vnode, container)
+    } else if (nextFlags & VNodeFlags.COMPONENT) {
+        patchComponent(prevVNode, vnode, container)
+    } else if (nextFlags & VNodeFlags.FRAGMENT) {
+        patchFragment(prevVNode, vnode, container)
+    } else if (nextFlags & VNodeFlags.PORTAL) {
+        patchPortal(prevVNode, vnode, container)
+    } else {
+        throw new Error('flags error.')
+    }
+}
+
+function replaceVNode(preVNode, vnode, container) {
+    container.removeChild(preVNode.el)
+    mount(vnode, container)
+}
+
+function patchElement(prevVNode, vnode, container) {
+    if (prevVNode.tag !== vnode.tag) {
+        replaceVNode(prevVNode, vnode, container)
+        return
+    }
+
+    const el = (vnode.el = prevVNode.el)
+
+    // patch vnodeData
+    const nextData = vnode.data
+    const prevData = vnode.data
+
+    if (nextData) {
+        for(let key in nextData) {
+            const nextVal = nextData[key]
+            const prevVal = prevData[key] // might be undefined
+            patchData(el, key, prevVal, nextVal)
+        }
+    }
+
+    if (prevData) {
+        for (let key in prevData) {
+            if (!nextData.hasOwnProperty(key)) {
+                const nextVal = null
+                const prevVal = prevData[key]
+                patchData(el, key, prevVal, nextVal)
+            }
+        }
+    }
+}
+
+function patchData(el, key, prevVal, nextVal, isSVG) {
+    const domProp = /^[A-Z]|^(?:value|checked|selected|muted)$/
+
+    switch (key) {
+        case 'style':
+            for (let k in nextVal) {
+                el.style[k] = nextVal[k]
+            }
+            for (let k in prevVal) {
+                if (!nextVal.hasOwnProperty(k)) {
+                    el.style[k] = ''
+                }
+            }
+            break
+        case 'class':
+            if (isSVG) {
+                el.setAttribute('class', nextVal)
+            } else {
+                el.className = nextVal
+            }
+            break
+        default:
+            if (key[0] === 'o' && key[1] === 'n') {
+                if (nextVal) {
+                    el.addEventListener(key.slice(2), nextVal)
+                }
+                if (prevVal) {
+                    el.removeEventListener(key.slice(2), prevVal)
+                }
+            }
+            if (domProp.test(key)) {
+                el[key] = nextVal
+            } else {
+                el.setAttribute(key, nextVal)
+            }
+            break
+    }
+}
