@@ -1,5 +1,5 @@
-import h, {Fragment, Portal} from "./h.js"
-import render from "./render.js"
+import h, {Fragment, Portal} from "./h/h.js"
+import render from "./render/render.js"
 
 export {
     h,

@@ -1,7 +1,6 @@
-import {VNodeFlags, ChildrenFlags} from "./flags.js"
+import {VNodeFlags, ChildrenFlags} from "../utils/flags.js"
 
 export const Fragment = Symbol()
-
 export const Portal = Symbol()
 
 export default function (tag, data = null, children = null) {
