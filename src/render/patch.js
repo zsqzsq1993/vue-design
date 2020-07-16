@@ -1,7 +1,6 @@
 /* functions related to patch */
-import {VNodeFlags} from "../utils/flags.js"
+import {VNodeFlags, ChildrenFlags} from "../utils/flags.js"
 import mount from "./mount.js"
-import {ChildrenFlags} from "../utils/flags"
 
 export default function patch(prevVNode, vnode, container) {
     const preFlags = prevVNode.flags
@@ -105,7 +104,7 @@ function patchChildren(
                     container.removeChild(prevChildren.el)
                     break
 
-                // single - single: remove old and add new
+                // single - single: repeat patch
                 case ChildrenFlags.SINGLE_VNODE:
                     patch(prevChildren, nextChildren, container)
                     break
@@ -125,14 +124,14 @@ function patchChildren(
                 // multiple - none: periodically remove old
                 case ChildrenFlags.NO_CHILDREN:
                     for (let key in prevChildren) {
-                        container.removeChild(prevChildren[key])
+                        container.removeChild(prevChildren[key].el)
                     }
                     break
 
                 // multiple - single: periodically remove old and add new
                 case ChildrenFlags.SINGLE_VNODE:
                     for (let key in prevChildren) {
-                        container.removeChild(prevChildren[key])
+                        container.removeChild(prevChildren[key].el)
                     }
                     mount(nextChildren, container)
                     break
@@ -141,7 +140,7 @@ function patchChildren(
                 // can be simplified by periodically remove and periodically add
                 default:
                     for (let key in prevChildren) {
-                        container.removeChild(prevChildren[key])
+                        container.removeChild(prevChildren[key].el)
                     }
                     for (let key in nextChildren) {
                         mount(nextChildren[key], container)

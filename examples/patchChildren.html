@@ -3,18 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>path children</title>
+    <style>
+        .wrapper {
+            border: 2px solid silver;
+        }
+        h3 {
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
-    <div class="none-none"></div>
-    <div class="none-single"></div>
-    <div class="none-multiple"></div>
+    <div class="none-none wrapper"><h3>none-none</h3></div>
+    <div class="none-single wrapper"><h3>none-single</h3></div>
+    <div class="none-multiple wrapper"><h3>none-multiple</h3></div>
 
-    <div class="single-none"></div>
-    <div class="single-single"></div>
-    <div class="single-multiple"></div>
+    <div class="single-none wrapper"><h3>single-none</h3></div>
+    <div class="single-single wrapper"><h3>single-single</h3></div>
+    <div class="single-multiple wrapper"><h3>single-multiple</h3></div>
 
-    <div class="multiple-none"></div>
-    <div class="multiple-single"></div>
-    <div class="multiple-multiple"></div>
+    <div class="multiple-none wrapper"><h3>multop-none</h3></div>
+    <div class="multiple-single wrapper"><h3>multop-single</h3></div>
+    <div class="multiple-multiple wrapper"><h3>multop-multiple</h3></div>
+    <script type="module" src="./patchChildren.js"></script>
 </body>
 </html>
