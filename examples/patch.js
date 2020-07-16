@@ -28,4 +28,55 @@ import {h, render, Fragment, Portal} from "../src"
         render(nextVNode, container)
         clearTimeout(timer)
     }, 3000)
-})()
+})();
+
+// patch text
+(function () {
+    const container = document.getElementById('test2')
+
+    const prev = h('div',{}, 'hello')
+
+    const next = h('div', {}, 'world')
+
+    render(prev, container)
+
+    setTimeout(() => {
+        render(next, container)
+    }, 2000)
+})();
+
+// patch Fragment
+(function () {
+    const container = document.getElementById('test3')
+
+    const prev = h(Fragment,{}, h('div', {}, 'hello'))
+
+    const next = h(Fragment,{}, [
+        h('div', {}, 'hi'),
+        h('div', {}, 'world')
+    ])
+
+    render(prev, container)
+
+    setTimeout(() => {
+        render(next, container)
+    }, 2000)
+})();
+
+// patch Portal
+(function () {
+    const container = document.getElementById('portal1')
+
+    const prev = h(Portal,{target: '#portal1'}, h('div', {}, 'hello'))
+
+    const next = h(Portal,{target: '#portal2'}, [
+        h('div', {}, 'hi'),
+        h('div', {}, 'world')
+    ])
+
+    render(prev, container)
+
+    setTimeout(() => {
+        render(next, container)
+    }, 2000)
+})();

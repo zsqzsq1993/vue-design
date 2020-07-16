@@ -23,6 +23,62 @@ export default function patch(prevVNode, vnode, container) {
     }
 }
 
+function patchText(prevVNode, vnode, container) {
+    if (prevVNode.children !== vnode.children) {
+        prevVNode.el.nodeValue = vnode.children
+    }
+    vnode.el = prevVNode.el
+}
+
+function patchFragment(prevVNode, vnode, container) {
+    patchChildren(
+        prevVNode.childFlags,
+        prevVNode.children,
+        vnode.childFlags,
+        vnode.children,
+        container
+    )
+    if (vnode.childFlags & ChildrenFlags.NO_CHILDREN) {
+        vnode.el = prevVNode.el
+    } else if (vnode.childFlags & ChildrenFlags.SINGLE_VNODE) {
+        vnode.el = vnode.children.el
+    } else if (vnode.childFlags & ChildrenFlags.KEYED_VNODES) {
+        vnode.el = vnode.children[0].el
+    }
+}
+
+function patchPortal(prevVNode, vnode, container) {
+    const oldTarget = typeof prevVNode.tag === 'string'
+        ? document.querySelector(prevVNode.tag)
+        : prevVNode.tag
+
+    patchChildren(
+        prevVNode.childFlags,
+        prevVNode.children,
+        vnode.childFlags,
+        vnode.children,
+        //prevVNode.tag,
+        oldTarget
+    )
+
+    vnode.el = prevVNode.el
+
+    if(prevVNode.tag !== vnode.tag) {
+        const target = typeof vnode.tag === 'string'
+            ? document.querySelector(vnode.tag)
+            : vnode.tag
+
+        if (vnode.childFlags & ChildrenFlags.NO_CHILDREN) {
+        } else if (vnode.childFlags & ChildrenFlags.SINGLE_VNODE) {
+            target.appendChild(vnode.children.el)
+        } else if (vnode.childFlags & ChildrenFlags.KEYED_VNODES) {
+            for (let key in vnode.children) {
+                target.appendChild(vnode.children[key].el)
+            }
+        }
+    }
+}
+
 function replaceVNode(preVNode, vnode, container) {
     container.removeChild(preVNode.el)
     mount(vnode, container)
