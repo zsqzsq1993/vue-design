@@ -29,13 +29,23 @@ function patchComponent(prevVNode, vnode, container) {
         replaceVNode(prevVNode, vnode, container)
     }
     // 检查标志位是否为有状态的组件，进行数据props的更新
-    if (vnode.flags & VNodeFlags.COMPONENT_STATEFUL) {
+    if (vnode.flags & VNodeFlags.COMPONENT_STATEFUL_NORMAL) {
         // 获取实例，并让新的VNode的children引用也指向实例
         const instance = (vnode.children = prevVNode.children)
         // 更新props
         instance.$props = vnode.data
         // 更新
         instance._update()
+    // 函数式组件的情况
+    } else {
+        // 新的vnode上是没有handler的，应指向prevVNode上的
+        const handler = (vnode.handler = prevVNode.handler)
+        // 对handler上的内容进行更新
+        handler.prev = prevVNode
+        handler.next = vnode
+        handler.container = container
+        // 直接调用_update()函数对其重新拆包
+        handler._update()
     }
 }
 

@@ -102,4 +102,38 @@ import {render, h} from "../src"
     }
 
     render(h(Parent), app)
+})();
+
+(function () {
+    const app = document.getElementById('test4')
+
+    class Parent {
+        localData = 'hello world'
+
+        render() {
+            return h(
+                Child,
+                {
+                    text: this.localData
+                }
+            )
+        }
+
+        mounted() {
+            setTimeout(() => {
+                this.localData = 'shit world'
+                this._update()
+            }, 2000)
+        }
+    }
+
+    function Child(props) {
+        return h(
+            'div',
+            null,
+            props.text
+        )
+    }
+
+    render(h(Parent), app)
 })()

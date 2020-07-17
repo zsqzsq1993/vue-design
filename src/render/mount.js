@@ -65,9 +65,34 @@ function mountComponent(vnode, container, isSVG) {
 }
 
 function mountFunctionalComponent(vnode, container, isSVG) {
-    const $vnode = vnode.tag()
-    vnode.el = $vnode.el
-    mount($vnode, container, isSVG)
+    vnode.handler = {
+        prev: null,
+        next: vnode,
+        container,
+        _update() {
+            // 首次更新，直接进行挂载即可
+            if(!this.prev) {
+                // 取出vnode.data中数据作为props，由闭包中父类数据提供
+                const props = vnode.data
+                // 解除包装后得到的$vnode绑定在vnode.children上
+                const $vnode = (vnode.children = vnode.tag(props))
+                // 挂载拆包后的$vnode
+                mount($vnode, container, isSVG)
+                // 拆包前后的el指向一致
+                vnode.el = $vnode.el
+            } else {
+                // 取出prevNode中拆包后对象
+                const prevTree = this.prev.children
+                // 取出改变后的data
+                const props = this.next.data
+                // 对新的vnode重新拆包
+                const $vnode = (this.next.children = this.next.tag(props))
+                // 拆包后的对象可能为任何类型的vnode，需要patch
+                patch(prevTree, $vnode, this.container)
+            }
+        }
+    }
+    vnode.handler._update()
 }
 
 function mountStatefulComponent(vnode, container, isSVG) {
