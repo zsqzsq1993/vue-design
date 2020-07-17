@@ -2,6 +2,7 @@
 import {ChildrenFlags, VNodeFlags} from "../utils/flags.js"
 import {createTextNode} from "../h/h.js"
 import {patchData} from "./patch.js"
+import patch from "./patch"
 
 export default function mount(vnonde, container, isSVG) {
     const {flags} = vnonde
@@ -70,10 +71,35 @@ function mountFunctionalComponent(vnode, container, isSVG) {
 }
 
 function mountStatefulComponent(vnode, container, isSVG) {
+    // 创建组件的实例
     const instance = new vnode.tag()
-    instance.$vnode = instance.render()
-    vnode.el = instance.$el = instance.$vnode.el
-    mount(instance.$vnode, container, isSVG)
+
+    instance._update = function () {
+        // 判断是否初次挂载
+        if (this._mounted) {
+            // 取得旧vnode
+            const prevVNode = this.$vnode
+            // 获取新的vnode
+            const nextVNode = (this.$vnode = this.render())
+            // patch新、旧vnode; 挂载点为旧vnode实际dom的父节点
+            patch(prevVNode, nextVNode, prevVNode.el.parentNode)
+            // 更新实际dom的引用
+            this.$el = vnode.el = this.$vnode.el
+        } else {
+            // 首次获取vnode
+            instance.$vnode = this.render()
+            // mount vnode
+            mount(vnode, container, isSVG)
+            // 更新实际dom的引用
+            this.$el = vnode.el = this.$vnode.el
+            // 标记完成初次挂载
+            this._mounted = true
+            // 调用mounted钩子函数
+            this.mounted && this.mounted()
+        }
+    }
+
+    instance._update()
 }
 
 function mountText(vnode, container) {
