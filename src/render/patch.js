@@ -23,6 +23,22 @@ export default function patch(prevVNode, vnode, container) {
     }
 }
 
+function patchComponent(prevVNode, vnode, container) {
+    // 检查是否两个组件为不同的组件，若果是，直接进行替换
+    if (prevVNode.tag !== vnode.tag) {
+        replaceVNode(prevVNode, vnode, container)
+    }
+    // 检查标志位是否为有状态的组件，进行数据props的更新
+    if (vnode.flags & VNodeFlags.COMPONENT_STATEFUL) {
+        // 获取实例，并让新的VNode的children引用也指向实例
+        const instance = (vnode.children = prevVNode.children)
+        // 更新props
+        instance.$props = vnode.data
+        // 更新
+        instance._update()
+    }
+}
+
 function patchText(prevVNode, vnode, container) {
     if (prevVNode.children !== vnode.children) {
         prevVNode.el.nodeValue = vnode.children
@@ -80,6 +96,11 @@ function patchPortal(prevVNode, vnode, container) {
 }
 
 function replaceVNode(preVNode, vnode, container) {
+    // 如果是组件VNode，需要调用被删除组件的unmounted函数来解除钩子
+    if (preVNode.flags & VNodeFlags.COMPONENT_STATEFUL_NORMAL) {
+        const instance = preVNode.children
+        instance.unmounted && instance.unmounted()
+    }
     container.removeChild(preVNode.el)
     mount(vnode, container)
 }

@@ -2,7 +2,7 @@
 import {ChildrenFlags, VNodeFlags} from "../utils/flags.js"
 import {createTextNode} from "../h/h.js"
 import {patchData} from "./patch.js"
-import patch from "./patch"
+import patch from "./patch.js"
 
 export default function mount(vnonde, container, isSVG) {
     const {flags} = vnonde
@@ -72,7 +72,9 @@ function mountFunctionalComponent(vnode, container, isSVG) {
 
 function mountStatefulComponent(vnode, container, isSVG) {
     // 创建组件的实例
-    const instance = new vnode.tag()
+    const instance = (vnode.children = new vnode.tag())
+    // 将子组件的props指向子vnode.data
+    instance.$props = vnode.data
 
     instance._update = function () {
         // 判断是否初次挂载
@@ -89,7 +91,7 @@ function mountStatefulComponent(vnode, container, isSVG) {
             // 首次获取vnode
             instance.$vnode = this.render()
             // mount vnode
-            mount(vnode, container, isSVG)
+            mount(instance.$vnode, container, isSVG)
             // 更新实际dom的引用
             this.$el = vnode.el = this.$vnode.el
             // 标记完成初次挂载
