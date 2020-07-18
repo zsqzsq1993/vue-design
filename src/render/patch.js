@@ -226,13 +226,23 @@ function patchChildren(
                 // multiple - multiple: core! diff algorithm!
                 // can be simplified by periodically remove and periodically add
                 default:
-                    for (let key in prevChildren) {
-                        container.removeChild(prevChildren[key].el)
+                    const prevLength = prevChildren.length
+                    const nextLength = nextChildren.length
+                    const shorterLength = prevLength < nextLength
+                            ? prevLength
+                            : nextLength
+                    for (let i=0; i < shorterLength; i++) {
+                        patch(prevChildren[i], nextChildren[i], container)
                     }
-                    for (let key in nextChildren) {
-                        mount(nextChildren[key], container)
+                    if (nextLength === shorterLength) {
+                        for (let i=shorterLength; i < prevLength; i++) {
+                            container.removeChild(prevChildren[i].el)
+                        }
+                    } else {
+                        for (let i=shorterLength; i< nextLength; i++) {
+                            mount(nextChildren[i], container)
+                        }
                     }
-                    break
             }
             break
     }
