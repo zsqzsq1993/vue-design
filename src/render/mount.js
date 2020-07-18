@@ -4,13 +4,13 @@ import {createTextNode} from "../h/h.js"
 import {patchData} from "./patch.js"
 import patch from "./patch.js"
 
-export default function mount(vnonde, container, isSVG) {
+export default function mount(vnonde, container, isSVG, refNode) {
     const {flags} = vnonde
     if (!flags) {
         return
     }
     if (flags & VNodeFlags.ELEMENT) {
-        mountElement(vnonde, container, isSVG)
+        mountElement(vnonde, container, isSVG, refNode)
     } else if (flags & VNodeFlags.COMPONENT) {
         mountComponent(vnonde, container, isSVG)
     } else if (flags & VNodeFlags.TEXT) {
@@ -22,7 +22,7 @@ export default function mount(vnonde, container, isSVG) {
     }
 }
 
-function mountElement(vnode, container, isSVG) {
+function mountElement(vnode, container, isSVG, refNode) {
     const domProp = /^[A-Z]|^(?:value|checked|selected|muted)$/
 
     // create dom element
@@ -53,7 +53,9 @@ function mountElement(vnode, container, isSVG) {
         }
     }
 
-    container.appendChild(el)
+    refNode
+        ? container.insertBefore(vnode.el, refNode)
+        : container.appendChild(vnode.el)
 }
 
 function mountComponent(vnode, container, isSVG) {

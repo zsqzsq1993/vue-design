@@ -226,23 +226,88 @@ function patchChildren(
                 // multiple - multiple: core! diff algorithm!
                 // can be simplified by periodically remove and periodically add
                 default:
-                    const prevLength = prevChildren.length
-                    const nextLength = nextChildren.length
-                    const shorterLength = prevLength < nextLength
+                    // without using key
+                    function simple() {
+                        const prevLength = prevChildren.length
+                        const nextLength = nextChildren.length
+                        const shorterLength = prevLength < nextLength
                             ? prevLength
                             : nextLength
-                    for (let i=0; i < shorterLength; i++) {
-                        patch(prevChildren[i], nextChildren[i], container)
-                    }
-                    if (nextLength === shorterLength) {
-                        for (let i=shorterLength; i < prevLength; i++) {
-                            container.removeChild(prevChildren[i].el)
+                        for (let i=0; i < shorterLength; i++) {
+                            patch(prevChildren[i], nextChildren[i], container)
                         }
-                    } else {
-                        for (let i=shorterLength; i< nextLength; i++) {
-                            mount(nextChildren[i], container)
+                        if (nextLength === shorterLength) {
+                            for (let i=shorterLength; i < prevLength; i++) {
+                                container.removeChild(prevChildren[i].el)
+                            }
+                        } else {
+                            for (let i=shorterLength; i< nextLength; i++) {
+                                mount(nextChildren[i], container)
+                            }
                         }
                     }
+
+                    // react的diff算法
+                    function react() {
+                        // 最大索引标志位
+                        let lastIndex = 0
+                        // 外层遍历所有新children
+                        for (let i=0, nextLen = nextChildren.length; i < nextLen; i++) {
+                            // 是否找到标志位
+                            let find = false
+                            // 当前新child
+                            const nextVNode = nextChildren[i]
+
+                            // 内层遍历所有旧children
+                            for (let j=0, prevLen = prevChildren.length; j < prevLen; j++) {
+                                // 当前旧child
+                                const prevVNode = prevChildren[j]
+                                // 对key值进行判断
+                                if (prevVNode.key === nextVNode.key) {
+                                    // 标志为找到
+                                    find = true
+                                    // 先打布丁
+                                    patch(prevVNode, nextVNode, container)
+                                    // 判断旧vnode指向的el是否需要根据新vnode交换位置
+                                    if (j < lastIndex) {
+                                        // 需要移动
+                                        const refNode = nextChildren[i-1].el.nextSibling
+                                        container.insertBefore(prevVNode.el, refNode)
+                                    } else {
+                                        // 无需移动，更新最大索引
+                                        lastIndex = j
+                                    }
+                                }
+                            }
+
+                            // 若果没有找到相同key值的旧child
+                            if (!find) {
+                                // 新child为新添加，要进行挂载
+                                const refNode = i - 1 < 0
+                                    ? prevChildren[0].el
+                                    : nextChildren[i-1].el.nextSibling
+                                mount(nextVNode, container, false, refNode)
+                            }
+                        }
+
+                        // 再遍历一次旧的children
+                        for (let j=0, prevLen = prevChildren.length; j < prevLen; j++) {
+                            // 当前旧child
+                            const prevChild = prevChildren[j]
+                            // 是否存在new child与当前旧child的值相等
+                            const has = nextChildren.find(
+                                nextChild => nextChild.key === prevChild.key
+                            )
+                            if (!has) {
+                                // 如果没有，需要移除
+                                container.removeChild(prevChild.el)
+                            }
+                        }
+                    }
+
+                    react()
+
+                    break
             }
             break
     }

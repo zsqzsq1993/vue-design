@@ -56,7 +56,11 @@ export default function (tag, data = null, children = null) {
         tag,
         data,
         children,
-        el: null
+        el: null,
+        key:
+            data && data.key
+                ? data.key
+                : null
     }
 }
 
