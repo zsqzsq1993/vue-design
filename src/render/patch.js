@@ -305,8 +305,99 @@ function patchChildren(
                         }
                     }
 
-                    react()
+                    // vue2的diff算法（双端比较）
+                    function vue2() {
+                        // 初始化双端的索引值
+                        let prevStartIndex = 0
+                        let prevEndIndex = prevChildren.length - 1
+                        let nextStartIndex = 0
+                        let nextEndIndex = nextChildren.length - 1
 
+                        // 初始化双端的value
+                        let prevStart = prevChildren[prevStartIndex]
+                        let prevEnd = prevChildren[prevEndIndex]
+                        let nextStart = nextChildren[nextStartIndex]
+                        let nextEnd = nextChildren[nextEndIndex]
+
+                        // 循环比较
+                        while(prevStartIndex <= prevEndIndex
+                        && nextStartIndex <= nextEndIndex) {
+                            // 由于之前移动prevChildren中可能会存在undefined
+                            if (!prevStart) {
+                                // 跳过
+                                prevStart = prevChildren[++prevStartIndex]
+                            } else if (!prevEnd) {
+                                // 跳过
+                                prevEnd = prevChildren[--prevEndIndex]
+                            } else
+
+                            // 开始四次双端比较
+                            if (prevStart.key === nextStart.key) {
+                                // 先patch，无需移动
+                                patch(prevStart, nextStart, container)
+                                // 更新索引及端值
+                                prevStart = prevChildren[++prevStartIndex]
+                                nextStart = nextChildren[++nextStartIndex]
+                            } else if (prevEnd.key === nextEnd.key) {
+                                // 先patch，无需移动
+                                patch(prevEnd, nextEnd, container)
+                                // 更新索引及端值
+                                prevEnd = prevChildren[--prevEndIndex]
+                                nextEnd = nextChildren[--nextEndIndex]
+                            } else if (prevStart.key === nextEnd.key) {
+                                // 先patch，需要将当前prevStart.el移动至"最后"
+                                patch(prevStart, nextEnd, container)
+                                container.insertBefore(prevStart.el, prevEnd.el.nextSibling)
+                                // 更新索引及端值
+                                prevStart = prevChildren[++prevStartIndex]
+                                nextEnd = nextChildren[--nextEndIndex]
+                            } else if (prevEnd.key === nextStart.key) {
+                                // 先patch，需要将当前prevEnd.el移动至"最前"
+                                patch(prevEnd, nextStart, container)
+                                container.insertBefore(prevEnd.el, prevStart.el)
+                                // 更新索引及端值
+                                prevEnd = prevChildren[--prevEndIndex]
+                                nextStart = nextChildren[++nextStartIndex]
+                            } else {
+                                // 若在双端无法匹配，则将nextStart进行遍历匹配
+                                const find = prevChildren.find(
+                                    prevChild => prevChild === nextStart
+                                )
+
+                                if (find) {
+                                    // 若有匹配项，先patch，再移动
+                                    const prevChild = prevChildren[find]
+                                    patch(prevChild, nextStart, container)
+                                    container.insertBefore(prevChild.el, prevStart.el)
+                                    // 需要将原VNode数组位置置为undefined
+                                    prevChildren[find] = undefined
+                                } else {
+                                    // 若无匹配项，为新元素，直接挂载在"最前"
+                                    mount(nextStart, container, false, prevStart.el)
+                                }
+
+                                // 无论如何，都需要更新nextStart & nextStartIndex
+                                nextStart = nextChildren[++nextStartIndex]
+                            }
+                        }
+
+                        // 处理忽略添加的新节点
+                        if (prevEndIndex < prevStartIndex) {
+                            for (let i = nextStartIndex; i <= nextEndIndex; i++) {
+                                mount(nextChildren[i], container, false, prevStart.el)
+                            }
+                        }
+
+                        // 处理忽略删除的旧节点
+                        if (nextEndIndex < nextStartIndex) {
+                            for (let i = prevStartIndex; i <= prevEndIndex; i++) {
+                                container.removeChild(prevChildren[i].el)
+                            }
+                        }
+
+                    }
+
+                    vue2()
                     break
             }
             break
